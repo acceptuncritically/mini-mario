@@ -101,7 +101,30 @@ describe('level 关卡模块', () => {
     const level = parseLevel(map);
     expect(level.coins.length).toBeGreaterThanOrEqual(25);
     expect(level.enemies.length).toBeGreaterThanOrEqual(6);
-    expect(level.spikes.length).toBeGreaterThanOrEqual(6);
+    expect(level.spikes.length).toBeGreaterThanOrEqual(20); // v2.1：钉刺加密
     expect(level.checkpoints).toHaveLength(2);
+  });
+
+  it('TC-LVL-07 双路结构：中段存在上路平台链，平台列无敌人且上路金币更多', () => {
+    const map = LEVELS[0];
+    const rows = map.split('\n');
+    // 中段（col 75~120）存在 ≥12 个平台列（第 11~12 行 #）
+    let platCols = 0;
+    for (let c = 75; c <= 120; c += 1) {
+      if (rows[11][c] === '#' || rows[12][c] === '#') platCols += 1;
+    }
+    expect(platCols).toBeGreaterThanOrEqual(12);
+    // 所有平台列第 14 行无敌人
+    for (let c = 75; c <= 120; c += 1) {
+      if (rows[11][c] === '#' || rows[12][c] === '#') {
+        expect(rows[14][c]).not.toBe('E');
+      }
+    }
+    // 上路金币（第 10 行）在 75~120 内 ≥6 个
+    let upperCoins = 0;
+    for (let c = 75; c <= 120; c += 1) {
+      if (rows[10][c] === 'C') upperCoins += 1;
+    }
+    expect(upperCoins).toBeGreaterThanOrEqual(6);
   });
 });
