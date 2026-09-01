@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>迷你马里奥 mini-mario</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #10131a;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas#game-canvas {
+      background: #87ceeb;
+      image-rendering: pixelated;
+      max-width: 100vw;
+      max-height: 100vh;
+      aspect-ratio: 960 / 544;
+      display: block;
+      touch-action: none;
+    }
+
+    /* ---- 触屏虚拟按钮（默认隐藏，触屏设备由 JS 显示） ---- */
+    #touch-controls {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+    #touch-controls.visible { display: block; }
+
+    .touch-group {
+      position: absolute;
+      bottom: 18px;
+      display: flex;
+      gap: 18px;
+      pointer-events: auto;
+    }
+    .touch-left  { left: 18px; }
+    .touch-right { right: 18px; }
+
+    .touch-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      background: rgba(20, 24, 32, 0.45);
+      color: #fff;
+      font-size: 30px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      cursor: pointer;
+    }
+    .touch-btn.jump-btn {
+      width: 88px;
+      height: 88px;
+      font-size: 26px;
+      font-weight: 700;
+      background: rgba(229, 57, 53, 0.55);
+    }
+    .touch-btn.pressed {
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(0.94);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas" width="960" height="544"></canvas>
+  </div>
+
+  <div id="touch-controls" hidden>
+    <div class="touch-group touch-left">
+      <button class="touch-btn" data-action="left" aria-label="向左移动">◀</button>
+      <button class="touch-btn" data-action="right" aria-label="向右移动">▶</button>
+    </div>
+    <div class="touch-group touch-right">
+      <button class="touch-btn jump-btn" data-action="jump" aria-label="跳跃">跳</button>
+    </div>
+  </div>
+
+  <script type="module" src="./src/game/main.js"></script>
+</body>
+</html>
