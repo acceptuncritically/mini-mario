@@ -1,4 +1,4 @@
-// 碰撞模块（SPEC 5.2 / 5.3）：分轴移动碰撞检测与响应（含踩踏判定）
+// 碰撞模块（SPEC v2 5.2）：分轴移动碰撞检测与响应（含踩踏/钉刺/检查点判定）
 import { TILE_SIZE, ENEMY_STOMP_THRESHOLD, COIN_SIZE } from './constants.js';
 import { aabbIntersect } from './physics.js';
 
@@ -24,7 +24,6 @@ export function moveX(entity, level, dt) {
   const right = Math.floor((entity.x + entity.w - 0.001) / TILE_SIZE);
 
   if (dir > 0) {
-    // 向右：找重叠区域中最左侧的固态格子，贴齐其左边界
     for (let row = top; row <= bottom; row += 1) {
       for (let col = left; col <= right; col += 1) {
         if (level.isSolid(col, row)) {
@@ -34,7 +33,6 @@ export function moveX(entity, level, dt) {
       }
     }
   } else {
-    // 向左：找重叠区域中最右侧的固态格子，贴齐其右边界
     for (let row = top; row <= bottom; row += 1) {
       for (let col = right; col >= left; col -= 1) {
         if (level.isSolid(col, row)) {
@@ -58,7 +56,6 @@ export function moveY(entity, level, dt) {
   const bottom = Math.floor((entity.y + entity.h - 0.001) / TILE_SIZE);
 
   if (dir > 0) {
-    // 下落：找重叠区域中最靠上的固态格子，贴齐其顶部并落地
     for (let row = top; row <= bottom; row += 1) {
       for (let col = left; col <= right; col += 1) {
         if (level.isSolid(col, row)) {
@@ -70,7 +67,6 @@ export function moveY(entity, level, dt) {
       }
     }
   } else {
-    // 上升：找重叠区域中最靠下的固态格子，贴齐其底部并失速
     for (let row = bottom; row >= top; row -= 1) {
       for (let col = left; col <= right; col += 1) {
         if (level.isSolid(col, row)) {
@@ -105,4 +101,15 @@ export function coinHit(player, coin) {
 // 通关判定：玩家碰撞盒与旗帜区域 AABB 相交
 export function flagHit(player, flag) {
   return aabbIntersect(rectOf(player), flag);
+}
+
+// 钉刺判定（v2 新增）：玩家碰撞盒与钉刺碰撞盒相交（钉刺矩形由 level 解析时生成）
+export function spikeHit(player, spike) {
+  return aabbIntersect(rectOf(player), spike);
+}
+
+// 检查点判定（v2 新增）：玩家碰撞盒与检查点所在整格相交
+export function checkpointHit(player, checkpoint) {
+  const tile = { x: checkpoint.x, y: checkpoint.y, w: TILE_SIZE, h: TILE_SIZE };
+  return aabbIntersect(rectOf(player), tile);
 }

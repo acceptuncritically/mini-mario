@@ -81,6 +81,27 @@
       background: rgba(255, 255, 255, 0.35);
       transform: scale(0.94);
     }
+
+    /* ---- 触屏暂停按钮（右上角） ---- */
+    #btn-pause {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      background: rgba(20, 24, 32, 0.45);
+      color: #fff;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      cursor: pointer;
+      z-index: 10;
+    }
+    #btn-pause.pressed { background: rgba(255, 255, 255, 0.35); }
   </style>
 </head>
 <body>
@@ -97,6 +118,8 @@
       <button class="touch-btn jump-btn" data-action="jump" aria-label="跳跃">跳</button>
     </div>
   </div>
+
+  <button id="btn-pause" hidden aria-label="暂停/继续">⏸</button>
 
   <script type="module" src="./src/game/main.js"></script>
 </body>

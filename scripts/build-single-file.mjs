@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// 依赖顺序：常量 → 物理 → 碰撞 → 实体 → 关卡 → 镜头 → 状态机 → 输入/渲染/主循环
+// 依赖顺序：常量 → 物理 → 碰撞 → 实体 → 关卡 → 镜头 → 最高分 → 状态机 → 输入/音频/渲染/主循环
 const ORDER = [
   'src/core/constants.js',
   'src/core/physics.js',
@@ -16,8 +16,10 @@ const ORDER = [
   'src/core/enemy.js',
   'src/core/level.js',
   'src/core/camera.js',
+  'src/core/highscore.js',
   'src/core/game.js',
   'src/game/input.js',
+  'src/game/audio.js',
   'src/game/renderer.js',
   'src/game/main.js',
 ];

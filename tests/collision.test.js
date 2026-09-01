@@ -1,48 +1,45 @@
 import { describe, it, expect } from 'vitest';
 import {
-  resetGrounded, moveX, moveY, isStomp, coinHit, flagHit,
+  resetGrounded, moveX, moveY, isStomp, coinHit, flagHit, spikeHit, checkpointHit,
 } from '../src/core/collision.js';
 import {
   TILE_SIZE, PLAYER_WIDTH, PLAYER_HEIGHT, ENEMY_SIZE, ENEMY_STOMP_THRESHOLD,
-  COIN_SIZE, MOVE_SPEED, FIXED_DT,
+  SPIKE_W, SPIKE_H, SPIKE_OFFSET_Y, MOVE_SPEED, FIXED_DT,
 } from '../src/core/constants.js';
 import { makeLevel } from './helpers.js';
 
 describe('collision 碰撞模块', () => {
   it('TC-COL-01 水平碰撞响应：玩家右侧有墙且 vx>0，右边贴齐墙左边界，不再进入墙内', () => {
-    // 墙：第 4 列（128..160），覆盖玩家所在行
     const level = makeLevel([
-      '    ####'.padEnd(100, '.'),
-      '    ####'.padEnd(100, '.'),
+      '    ####',
+      '    ####',
     ]);
     const player = {
       x: 100, y: 0, w: PLAYER_WIDTH, h: PLAYER_HEIGHT, vx: MOVE_SPEED, vy: 0,
     };
     moveX(player, level, FIXED_DT);
     const wallLeft = 4 * TILE_SIZE;
-    expect(player.x + player.w).toBe(wallLeft); // 右边贴齐墙左边界
-    expect(player.x + player.w).toBeLessThanOrEqual(wallLeft); // 未穿入墙内
+    expect(player.x + player.w).toBe(wallLeft);
+    expect(player.x + player.w).toBeLessThanOrEqual(wallLeft);
   });
 
   it('TC-COL-02 水平碰撞响应：玩家左侧有墙且 vx<0，左边贴齐墙右边界', () => {
-    // 墙：第 3 列（96..128），覆盖玩家所在行
     const level = makeLevel([
-      '   #'.padEnd(100, '.'),
-      '   #'.padEnd(100, '.'),
+      '   #....',
+      '   #....',
     ]);
     const player = {
       x: 100, y: 0, w: PLAYER_WIDTH, h: PLAYER_HEIGHT, vx: -MOVE_SPEED, vy: 0,
     };
     moveX(player, level, FIXED_DT);
     const wallRight = 4 * TILE_SIZE;
-    expect(player.x).toBe(wallRight); // 左边贴齐墙右边界
+    expect(player.x).toBe(wallRight);
   });
 
   it('TC-COL-03 垂直碰撞响应：下落撞到地面顶部，底部贴齐、vy=0、grounded=true', () => {
-    // 地面：第 4 行（顶部 128）
     const level = makeLevel([
       '', '', '', '',
-      '##'.padEnd(100, '.'),
+      '##',
     ]);
     const player = {
       x: 0, y: 100, w: PLAYER_WIDTH, h: PLAYER_HEIGHT, vx: 0, vy: 300, grounded: false,
@@ -55,10 +52,9 @@ describe('collision 碰撞模块', () => {
   });
 
   it('TC-COL-04 垂直碰撞响应：上升顶到格子底部，顶部贴齐、vy=0（顶头失速）', () => {
-    // 天花板：第 5 行（底部 192）
     const level = makeLevel([
       '', '', '', '', '',
-      '##'.padEnd(100, '.'),
+      '##',
     ]);
     const player = {
       x: 0, y: 196, w: PLAYER_WIDTH, h: PLAYER_HEIGHT, vx: 0, vy: -300, grounded: false,
@@ -80,19 +76,16 @@ describe('collision 碰撞模块', () => {
       x: 0, y: -10, w: PLAYER_WIDTH, h: PLAYER_HEIGHT, vy: 300,
     };
     const enemy = { x: 0, y: 20, w: ENEMY_SIZE, h: ENEMY_SIZE };
-    // 玩家底部 = -10 + 36 = 26 ≤ 20 + 12 = 32
     expect(player.y + player.h).toBeLessThanOrEqual(enemy.y + ENEMY_STOMP_THRESHOLD);
     expect(isStomp(player, enemy)).toBe(true);
   });
 
   it('TC-COL-07 踩踏判定：vy ≤ 0 或底部远低于敌人顶部，返回 stomp 为假', () => {
     const enemy = { x: 0, y: 20, w: ENEMY_SIZE, h: ENEMY_SIZE };
-    // vy = 0（水平/静止接触）
     const horizontal = {
       x: 0, y: -10, w: PLAYER_WIDTH, h: PLAYER_HEIGHT, vy: 0,
     };
     expect(isStomp(horizontal, enemy)).toBe(false);
-    // 底部远低于敌人顶部（侧碰在敌人中下部）
     const deep = {
       x: 0, y: 10, w: PLAYER_WIDTH, h: PLAYER_HEIGHT, vy: 300,
     };
@@ -104,12 +97,10 @@ describe('collision 碰撞模块', () => {
     const player = {
       x: 100, y: 100, w: PLAYER_WIDTH, h: PLAYER_HEIGHT,
     };
-    // 金币中心与玩家中心重合 -> 相交
     const overlappingCoin = {
       x: 100 + PLAYER_WIDTH / 2, y: 100 + PLAYER_HEIGHT / 2,
     };
     expect(coinHit(player, overlappingCoin)).toBe(true);
-    // 金币远离玩家 -> 不相交
     const farCoin = { x: 1000, y: 1000 };
     expect(coinHit(player, farCoin)).toBe(false);
   });
@@ -120,5 +111,28 @@ describe('collision 碰撞模块', () => {
     expect(flagHit(onFlag, flag)).toBe(true);
     const far = { x: 0, y: 0, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
     expect(flagHit(far, flag)).toBe(false);
+  });
+
+  it('TC-COL-10 钉刺判定：玩家与钉刺碰撞盒相交为真，不相交为假', () => {
+    // 钉刺碰撞盒按 SPEC 5.2-5：x=col*32+3, y=row*32+SPIKE_OFFSET_Y, w=SPIKE_W, h=SPIKE_H
+    const spike = {
+      x: 5 * TILE_SIZE + (TILE_SIZE - SPIKE_W) / 2,
+      y: 14 * TILE_SIZE + SPIKE_OFFSET_Y,
+      w: SPIKE_W,
+      h: SPIKE_H,
+    };
+    expect(spike.x).toBe(5 * TILE_SIZE + 3); // (32-26)/2 = 3
+    const onSpike = { x: 5 * TILE_SIZE, y: 14 * TILE_SIZE, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+    expect(spikeHit(onSpike, spike)).toBe(true);
+    const away = { x: 0, y: 0, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+    expect(spikeHit(away, spike)).toBe(false);
+  });
+
+  it('TC-COL-11 检查点判定：玩家与检查点所在格相交为真，不相交为假', () => {
+    const checkpoint = { x: 8 * TILE_SIZE, y: 14 * TILE_SIZE };
+    const onIt = { x: 8 * TILE_SIZE + 4, y: 14 * TILE_SIZE + 4, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+    expect(checkpointHit(onIt, checkpoint)).toBe(true);
+    const away = { x: 0, y: 0, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+    expect(checkpointHit(away, checkpoint)).toBe(false);
   });
 });
